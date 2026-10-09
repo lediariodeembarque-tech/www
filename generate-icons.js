@@ -1,0 +1,117 @@
+import sharp from 'sharp';
+import fs from 'node:fs';
+
+const svgStandard = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f2242" />
+      <stop offset="100%" stop-color="#071224" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffcf40" />
+      <stop offset="100%" stop-color="#f5b400" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+  
+  <!-- Background with subtle border -->
+  <rect width="512" height="512" rx="104" fill="url(#bgGrad)" />
+  <rect x="8" y="8" width="496" height="496" rx="98" fill="none" stroke="url(#goldGrad)" stroke-width="4" stroke-opacity="0.4" />
+  
+  <!-- Outer Navigation Compass Ring -->
+  <circle cx="256" cy="245" r="170" fill="none" stroke="#2c4570" stroke-width="3" stroke-dasharray="8 8" opacity="0.6"/>
+  <circle cx="256" cy="245" r="145" fill="none" stroke="#1d355e" stroke-width="2"/>
+  
+  <!-- Airplane Graphic -->
+  <g filter="url(#shadow)" transform="translate(256, 235)">
+    <!-- Jet Fuselage & Wings -->
+    <path d="M0,-120 C6,-90 12,-40 12,20 L120,85 L120,105 L16,80 L16,145 L50,172 L50,190 L0,175 L-50,190 L-50,172 L-16,145 L-16,80 L-120,105 L-120,85 L-12,20 C-12,-40 -6,-90 0,-120 Z" 
+          fill="url(#goldGrad)" />
+    <!-- Cabin Window Detail -->
+    <circle cx="0" cy="-60" r="4.5" fill="#0b1a33"/>
+    <circle cx="0" cy="-40" r="4" fill="#0b1a33"/>
+    <circle cx="0" cy="-20" r="4" fill="#0b1a33"/>
+    <circle cx="0" cy="0" r="4" fill="#0b1a33"/>
+  </g>
+  
+  <!-- Golden Wings / Speed trails -->
+  <path d="M120,330 Q256,360 392,330" fill="none" stroke="url(#goldGrad)" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
+  <path d="M160,350 Q256,375 352,350" fill="none" stroke="url(#goldGrad)" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+  
+  <!-- Text Label Badge -->
+  <text x="256" y="420" text-anchor="middle" font-family="'Segoe UI', Roboto, sans-serif" font-size="34" font-weight="900" fill="#eef3fb" letter-spacing="4">
+    DIÁRIO DE EMBARQUE
+  </text>
+  <text x="256" y="450" text-anchor="middle" font-family="'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="700" fill="#f5b400" letter-spacing="6">
+    AVIAÇÃO &amp; BORDAGEM
+  </text>
+</svg>`;
+
+// Maskable icon with 15% safe margin around core elements
+const svgMaskable = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f2242" />
+      <stop offset="100%" stop-color="#071224" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffcf40" />
+      <stop offset="100%" stop-color="#f5b400" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Full bleed background without rounded corners for maskable -->
+  <rect width="512" height="512" fill="url(#bgGrad)" />
+  
+  <!-- Scaled inside 80% safe zone circle -->
+  <g transform="translate(256, 256) scale(0.72) translate(-256, -256)">
+    <circle cx="256" cy="245" r="170" fill="none" stroke="#2c4570" stroke-width="3" stroke-dasharray="8 8" opacity="0.6"/>
+    <circle cx="256" cy="245" r="145" fill="none" stroke="#1d355e" stroke-width="2"/>
+    
+    <g transform="translate(256, 235)">
+      <path d="M0,-120 C6,-90 12,-40 12,20 L120,85 L120,105 L16,80 L16,145 L50,172 L50,190 L0,175 L-50,190 L-50,172 L-16,145 L-16,80 L-120,105 L-120,85 L-12,20 C-12,-40 -6,-90 0,-120 Z" 
+            fill="url(#goldGrad)" />
+      <circle cx="0" cy="-60" r="4.5" fill="#0b1a33"/>
+      <circle cx="0" cy="-40" r="4" fill="#0b1a33"/>
+      <circle cx="0" cy="-20" r="4" fill="#0b1a33"/>
+      <circle cx="0" cy="0" r="4" fill="#0b1a33"/>
+    </g>
+    
+    <path d="M120,330 Q256,360 392,330" fill="none" stroke="url(#goldGrad)" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
+    <text x="256" y="420" text-anchor="middle" font-family="'Segoe UI', Roboto, sans-serif" font-size="34" font-weight="900" fill="#eef3fb" letter-spacing="4">
+      DIÁRIO DE EMBARQUE
+    </text>
+  </g>
+</svg>`;
+
+async function buildIcons() {
+  fs.writeFileSync('./icon.svg', svgStandard);
+  
+  const standardBuffer = Buffer.from(svgStandard);
+  const maskableBuffer = Buffer.from(svgMaskable);
+
+  await sharp(standardBuffer).resize(512, 512).png().toFile('./icon-512.png');
+  console.log('Created icon-512.png');
+
+  await sharp(standardBuffer).resize(192, 192).png().toFile('./icon-192.png');
+  console.log('Created icon-192.png');
+
+  await sharp(standardBuffer).resize(180, 180).png().toFile('./apple-touch-icon.png');
+  console.log('Created apple-touch-icon.png');
+
+  await sharp(maskableBuffer).resize(512, 512).png().toFile('./icon-512-maskable.png');
+  console.log('Created icon-512-maskable.png');
+
+  await sharp(maskableBuffer).resize(192, 192).png().toFile('./icon-192-maskable.png');
+  console.log('Created icon-192-maskable.png');
+
+  await sharp(standardBuffer).resize(64, 64).png().toFile('./favicon.png');
+  console.log('Created favicon.png');
+}
+
+buildIcons().catch(err => {
+  console.error(err);
+  process.exit(1);
+});

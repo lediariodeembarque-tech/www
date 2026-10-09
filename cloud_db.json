@@ -1,0 +1,10 @@
+{
+  "flights": [],
+  "archivedFlights": [],
+  "adminWhitelist": [],
+  "lastUpdated": 1791536134493,
+  "version": 3,
+  "deletedFlightIds": [
+    "test1"
+  ]
+}
