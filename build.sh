@@ -16,10 +16,15 @@ cp /app/applet/icon-512.png assets/
 cp /app/applet/favicon.png assets/
 cp /app/applet/apple-touch-icon.png assets/
 
-# Generate keystore if not present
+# Never generate or replace a signing key automatically.
+# The existing keystore must be supplied securely by the release environment.
 if [ ! -f release.keystore ]; then
-  keytool -genkey -v -keystore release.keystore -alias diariodeembarque -keyalg RSA -keysize 2048 -validity 10000 -storepass embarque2026 -keypass embarque2026 -dname "CN=Diario de Embarque, OU=Dev, O=Aviation, L=Sao Paulo, ST=SP, C=BR"
+  echo "ERRO: release.keystore não encontrado. Build interrompido para evitar gerar uma chave diferente."
+  exit 1
 fi
+
+: "${ANDROID_KEYSTORE_PASSWORD:?Defina ANDROID_KEYSTORE_PASSWORD no ambiente seguro de build}"
+: "${ANDROID_KEY_PASSWORD:=$ANDROID_KEYSTORE_PASSWORD}"
 
 echo "--- 1. Generating R.java with aapt ---"
 aapt package -f -m -J gen -S res -M AndroidManifest.xml -I /tmp/android.jar
@@ -40,7 +45,7 @@ echo "--- 6. Running zipalign ---"
 zipalign -f -p 4 bin/unaligned.apk /app/applet/diario-embarque.apk
 
 echo "--- 7. Signing APK with apksigner ---"
-apksigner sign --ks release.keystore --ks-pass pass:embarque2026 --key-pass pass:embarque2026 /app/applet/diario-embarque.apk
+apksigner sign --ks release.keystore --ks-pass env:ANDROID_KEYSTORE_PASSWORD --key-pass env:ANDROID_KEY_PASSWORD /app/applet/diario-embarque.apk
 
 echo "--- 8. Verifying APK ---"
 apksigner verify -v /app/applet/diario-embarque.apk
