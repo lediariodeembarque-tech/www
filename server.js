@@ -1222,6 +1222,24 @@ app.get('/api/robo/planilha-voos', async (req, res) => {
   }
 });
 
+// Protect runtime data and signing material from direct HTTP static access.
+// These files remain available to the server process on disk; only public downloads are blocked.
+app.use((req, res, next) => {
+  let decodedPath = req.path;
+  try { decodedPath = decodeURIComponent(req.path); } catch (_) {}
+  const normalizedPath = decodedPath.replace(/\\\\/g, '/').toLowerCase();
+  const blockedExactFiles = new Set([
+    '/cloud_db.json',
+    '/users_db.json',
+    '/chat_messages.json',
+    '/release.keystore'
+  ]);
+  if (blockedExactFiles.has(normalizedPath) || /(^|\\/)\\.env(?:\\.|$)/i.test(normalizedPath)) {
+    return res.status(404).json({ error: 'Arquivo não encontrado.' });
+  }
+  next();
+});
+
 // Serve static assets from workspace root
 app.use(express.static(__dirname, {
   extensions: ['html', 'htm']
